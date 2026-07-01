@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel Schedule Planner</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f2f2f2}
+header{background:#2196F3;color:#fff;padding:15px;text-align:center;font-size:22px;font-weight:bold}
+.container{max-width:700px;margin:auto;padding:15px}
+.card{background:#fff;padding:15px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-bottom:15px}
+input,select,button{width:100%;padding:10px;margin:6px 0;box-sizing:border-box}
+button{background:#2196F3;color:#fff;border:none;border-radius:6px;cursor:pointer}
+button:hover{background:#1976D2}
+.timeline{position:relative;margin-top:15px}
+.timeline:before{content:"";position:absolute;left:18px;top:0;bottom:0;width:3px;background:#2196F3}
+.item{position:relative;padding-left:45px;margin:15px 0}
+.item:before{content:"";position:absolute;left:10px;top:8px;width:16px;height:16px;background:#2196F3;border-radius:50%}
+.small{color:#666;font-size:13px}
+.actions button{width:auto;padding:6px 10px;margin-right:5px}
+#report{white-space:pre-wrap;background:#eef;padding:10px;border-radius:8px}
+@media(max-width:600px){header{font-size:18px}.container{padding:10px}}
+</style>
+</head>
+<body>
+<header>✈ Travel Schedule Planner</header>
+<div class="container">
+
+<div class="card">
+<h3>Add Event</h3>
+<input type="date" id="date">
+<input type="time" id="time">
+<input type="text" id="event" placeholder="Event">
+<select id="type">
+<option>Permanent</option>
+<option>Temporary</option>
+</select>
+<button onclick="addEvent()">Add Event</button>
+<button onclick="generateReport()">Final Schedule Report</button>
+</div>
+
+<div class="card">
+<h3>Trip Timeline</h3>
+<div id="timeline" class="timeline"></div>
+</div>
+
+<div class="card">
+<h3>Report</h3>
+<div id="report">Click "Final Schedule Report".</div>
+</div>
+
+</div>
+
+<script>
+let data=JSON.parse(localStorage.getItem("travelData")||"[]");
+
+function save(){localStorage.setItem("travelData",JSON.stringify(data));render();}
+
+function addEvent() {
+
+    const d = document.getElementById("date").value;
+    const t = document.getElementById("time").value;
+    const e = document.getElementById("event").value.trim();
+    const tp = document.getElementById("type").value;
+
+    if (d === "" || t === "" || e === "") {
+        alert("Please fill all fields.");
+        return;
+    }
+
+    data.push({
+        d: d,
+        t: t,
+        e: e,
+        tp: tp
+    });
+
+    save();
+
+    document.getElementById("date").value = "";
+    document.getElementById("time").value = "";
+    document.getElementById("event").value = "";
+    document.getElementById("type").selectedIndex = 0;
+}
+
+function render() {
+
+    data.sort((a, b) => (a.d + a.t).localeCompare(b.d + b.t));
+
+    const timeline = document.getElementById("timeline");
+    timeline.innerHTML = "";
+
+    data.forEach((x, i) => {
+
+        timeline.innerHTML += `
+        <div class="item">
+            <b>${x.e}</b><br>
+            <span class="small">
+                📅 ${x.d} | 🕒 ${x.t} | ${x.tp}
+            </span>
+
+            <div class="actions">
+                <button onclick="editItem(${i})">Edit</button>
+                <button onclick="delItem(${i})">Delete</button>
+            </div>
+        </div>`;
+    });
+}
+
+function editItem(i){
+ let v=prompt("Edit event",data[i].e);
+ if(v){data[i].e=v;save();}
+}
+
+function delItem(i){
+ if(confirm("Delete this event?")){
+   data.splice(i,1);
+   save();
+ }
+}
+
+function generateReport() {
+
+    const report = document.getElementById("report");
+
+    let txt = "FINAL TRAVEL SCHEDULE\n\n";
+
+    data.forEach((x, n) => {
+        txt += `${n + 1}. ${x.d}  ${x.t} - ${x.e} (${x.tp})\n`;
+    });
+
+    report.textContent = txt;
+}
+
+render();
+</script>
+</body>
+</html>
