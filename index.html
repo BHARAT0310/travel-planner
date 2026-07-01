@@ -1,138 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Travel Schedule Planner</title>
-<style>
-body{font-family:Arial,sans-serif;margin:0;background:#f2f2f2}
-header{background:#2196F3;color:#fff;padding:15px;text-align:center;font-size:22px;font-weight:bold}
-.container{max-width:700px;margin:auto;padding:15px}
-.card{background:#fff;padding:15px;border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.15);margin-bottom:15px}
-input,select,button{width:100%;padding:10px;margin:6px 0;box-sizing:border-box}
-button{background:#2196F3;color:#fff;border:none;border-radius:6px;cursor:pointer}
-button:hover{background:#1976D2}
-.timeline{position:relative;margin-top:15px}
-.timeline:before{content:"";position:absolute;left:18px;top:0;bottom:0;width:3px;background:#2196F3}
-.item{position:relative;padding-left:45px;margin:15px 0}
-.item:before{content:"";position:absolute;left:10px;top:8px;width:16px;height:16px;background:#2196F3;border-radius:50%}
-.small{color:#666;font-size:13px}
-.actions button{width:auto;padding:6px 10px;margin-right:5px}
-#report{white-space:pre-wrap;background:#eef;padding:10px;border-radius:8px}
-@media(max-width:600px){header{font-size:18px}.container{padding:10px}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wayfarer - Travel Planner</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-<header>✈ Travel Schedule Planner</header>
-<div class="container">
 
-<div class="card">
-<h3>Add Event</h3>
-<input type="date" id="date">
-<input type="time" id="time">
-<input type="text" id="event" placeholder="Event">
-<select id="type">
-<option>Permanent</option>
-<option>Temporary</option>
-</select>
-<button onclick="addEvent()">Add Event</button>
-<button onclick="generateReport()">Final Schedule Report</button>
-</div>
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo-area">
+        <i class="fa-solid fa-map-location-dot logo-icon"></i>
+        <div>
+          <h1>Wayfarer</h1>
+          <p class="subtitle">Real-Time Travel Planner</p>
+        </div>
+      </div>
 
-<div class="card">
-<h3>Trip Timeline</h3>
-<div id="timeline" class="timeline"></div>
-</div>
+      <div class="quick-stats">
+        <div class="stat-card">
+          <span class="stat-label">Total Cost:</span>
+          <span class="stat-val" id="totalCostDisplay">$0.00</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Events:</span>
+          <span class="stat-val" id="totalEventsDisplay">0</span>
+        </div>
+      </div>
 
-<div class="card">
-<h3>Report</h3>
-<div id="report">Click "Final Schedule Report".</div>
-</div>
+      <div class="header-actions">
+        <button id="themeToggleBtn" class="icon-btn" title="Toggle Theme" aria-label="Toggle theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+        <button id="printReportBtn" class="btn btn-secondary">
+          <i class="fa-solid fa-print"></i> Print Itinerary
+        </button>
+      </div>
+    </div>
+  </header>
 
-</div>
+  <main class="main-container">
+    <!-- Left Panel: Search, Filter, and Action Forms -->
+    <aside class="left-panel">
+      <!-- Search and Filter Module -->
+      <section class="card filter-card">
+        <h3><i class="fa-solid fa-sliders"></i> Search & Filters</h3>
+        
+        <div class="control-group">
+          <label for="searchBar">Search Itinerary</label>
+          <div class="search-input-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="searchBar" placeholder="Search by title, location, notes...">
+          </div>
+        </div>
 
-<script>
-let data=JSON.parse(localStorage.getItem("travelData")||"[]");
+        <div class="control-row">
+          <div class="control-group half">
+            <label for="filterType">Category</label>
+            <select id="filterType">
+              <option value="all">All Types</option>
+              <option value="flight">Flights</option>
+              <option value="lodging">Lodging</option>
+              <option value="activity">Activities</option>
+              <option value="food">Food & Dining</option>
+              <option value="transit">Transit</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
 
-function save(){localStorage.setItem("travelData",JSON.stringify(data));render();}
+          <div class="control-group half">
+            <label for="filterStatus">Commit Status</label>
+            <select id="filterStatus">
+              <option value="all">All</option>
+              <option value="permanent">Confirmed</option>
+              <option value="temporary">Tentative</option>
+            </select>
+          </div>
+        </div>
+      </section>
 
-function addEvent() {
+      <!-- Event Entry Form (Add/Edit) -->
+      <section class="card form-card">
+        <h3 id="formTitle"><i class="fa-solid fa-calendar-plus"></i> Add Trip Event</h3>
+        
+        <form id="eventForm" novalidate>
+          <input type="hidden" id="eventId">
 
-    const d = document.getElementById("date").value;
-    const t = document.getElementById("time").value;
-    const e = document.getElementById("event").value.trim();
-    const tp = document.getElementById("type").value;
+          <div class="control-group">
+            <label for="eventTitle">Event Title *</label>
+            <input type="text" id="eventTitle" placeholder="e.g., flight to Paris, check-in, lunch" required>
+          </div>
 
-    if (d === "" || t === "" || e === "") {
-        alert("Please fill all fields.");
-        return;
-    }
-
-    data.push({
-        d: d,
-        t: t,
-        e: e,
-        tp: tp
-    });
-
-    save();
-
-    document.getElementById("date").value = "";
-    document.getElementById("time").value = "";
-    document.getElementById("event").value = "";
-    document.getElementById("type").selectedIndex = 0;
-}
-
-function render() {
-
-    data.sort((a, b) => (a.d + a.t).localeCompare(b.d + b.t));
-
-    const timeline = document.getElementById("timeline");
-    timeline.innerHTML = "";
-
-    data.forEach((x, i) => {
-
-        timeline.innerHTML += `
-        <div class="item">
-            <b>${x.e}</b><br>
-            <span class="small">
-                📅 ${x.d} | 🕒 ${x.t} | ${x.tp}
-            </span>
-
-            <div class="actions">
-                <button onclick="editItem(${i})">Edit</button>
-                <button onclick="delItem(${i})">Delete</button>
+          <div class="control-row">
+            <div class="control-group half">
+              <label for="eventType">Event Type</label>
+              <select id="eventType">
+                <option value="flight">Flight</option>
+                <option value="lodging">Lodging</option>
+                <option value="activity">Activity</option>
+                <option value="food">Food & Dining</option>
+                <option value="transit">Transit</option>
+                <option value="other">Other</option>
+              </select>
             </div>
-        </div>`;
-    });
-}
 
-function editItem(i){
- let v=prompt("Edit event",data[i].e);
- if(v){data[i].e=v;save();}
-}
+            <div class="control-group half">
+              <label for="eventStatus">Status</label>
+              <select id="eventStatus">
+                <option value="permanent">Confirmed (Permanent)</option>
+                <option value="temporary">Tentative (Temporary)</option>
+              </select>
+            </div>
+          </div>
 
-function delItem(i){
- if(confirm("Delete this event?")){
-   data.splice(i,1);
-   save();
- }
-}
+          <div class="control-row">
+            <div class="control-group half">
+              <label for="eventStart">Start Date & Time *</label>
+              <input type="datetime-local" id="eventStart" required>
+            </div>
 
-function generateReport() {
+            <div class="control-group half">
+              <label for="eventEnd">End Date & Time</label>
+              <input type="datetime-local" id="eventEnd">
+            </div>
+          </div>
 
-    const report = document.getElementById("report");
+          <div class="control-row">
+            <div class="control-group half">
+              <label for="eventLocation">Location</label>
+              <input type="text" id="eventLocation" placeholder="e.g., Charles de Gaulle Airport">
+            </div>
 
-    let txt = "FINAL TRAVEL SCHEDULE\n\n";
+            <div class="control-group half">
+              <label for="eventCost">Estimated Cost ($)</label>
+              <input type="number" id="eventCost" placeholder="0.00" min="0" step="0.01">
+            </div>
+          </div>
 
-    data.forEach((x, n) => {
-        txt += `${n + 1}. ${x.d}  ${x.t} - ${x.e} (${x.tp})\n`;
-    });
+          <div class="control-group">
+            <label for="eventNotes">Notes & Details</label>
+            <textarea id="eventNotes" rows="3" placeholder="Add confirmation numbers, gate updates, addresses, etc."></textarea>
+          </div>
 
-    report.textContent = txt;
-}
+          <div class="form-actions">
+            <button type="button" id="cancelEditBtn" class="btn btn-secondary hidden">Cancel Edit</button>
+            <button type="submit" id="submitBtn" class="btn btn-primary">Add Event</button>
+          </div>
+        </form>
+      </section>
+    </aside>
 
-render();
-</script>
+    <!-- Right Panel: Dynamic Timeline View -->
+    <section class="timeline-container">
+      <div class="timeline-header">
+        <h2><i class="fa-regular fa-clock"></i> Travel Timeline</h2>
+        <span class="badge" id="visibleCountBadge">Showing 0 Events</span>
+      </div>
+
+      <div id="timelineContent" class="timeline-content">
+        <!-- Rendered events appear here dynamic grouping -->
+        <div class="empty-state">
+          <i class="fa-solid fa-route empty-icon"></i>
+          <p>Your itinerary is empty. Add events on the left to start mapping your journey!</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Printable Report Container (Hidden visually in standard web mode) -->
+  <div id="printReportSection" class="print-only">
+    <div class="print-header">
+      <h1>Wayfarer Travel Plan & Itinerary</h1>
+      <p id="printGeneratedDate"></p>
+    </div>
+    <div class="print-summary">
+      <div><strong>Total Scheduled Cost:</strong> <span id="printTotalCost">$0.00</span></div>
+      <div><strong>Total Scheduled Events:</strong> <span id="printTotalEvents">0</span></div>
+    </div>
+    <div id="printTimelineContent">
+      <!-- Mirror dynamic simplified print view elements -->
+    </div>
+  </div>
+
+  <!-- Firebase Scripts (ESM Format) -->
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
